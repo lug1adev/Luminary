@@ -20,11 +20,6 @@ local lib = {
     device = "",
 }
 
-local request = syn.request or http.request or request or nil
-if not request then
-    game:Shutdown()
-end
-
 function greatTable(tbl)
     for key, value in pairs(tbl) do
         if type(value) ~= "function" and value == "" or value == nil then
@@ -46,7 +41,7 @@ function proxyMask(url)
         local params = "?url=%s&country=%s&device=%s"
         api = string.format(api .. params, url, country, device)
 
-        return request({
+        local req = http.request({
             Url = api,
             Method = "GET",
             Headers = {
@@ -54,11 +49,30 @@ function proxyMask(url)
                 ["X-RapidAPI-Host"] = host
             },
         })
+
+        if not req.Success == false and req.StatusMessage == "Too Many Requests" then
+            print("Retrying...")
+            spawn(function()
+                repeat
+                    wait(1)
+                    req = request({
+                        Url = api,
+                        Method = "GET",
+                        Headers = {
+                            ["X-RapidAPI-Key"] = key,
+                            ["X-RapidAPI-Host"] = host
+                        },
+                    })
+                until req.Success and not req.StatusMessage == "Too Many Requests"
+            end) 
+        end
+
+        repeat wait() until req.Success
+        return req.Body
     end
 
     return false
 end
 
 lib.request = proxyMask
-
 return lib
