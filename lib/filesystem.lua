@@ -47,4 +47,15 @@ lib.delfile = function(path)
     end
 end
 
+lib.makepath = function(...)
+    local args = ...;
+    local path = ""
+
+    table.foreach(args, function(i, v)
+        path = (path == "") and v or (path .. "/" .. v)
+    end)
+
+    return path
+end
+
 return lib
